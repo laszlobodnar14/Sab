@@ -18,7 +18,7 @@ gifs = {
     "sab": "https://media.discordapp.net/attachments/1059887015505702933/1405592851102044220/Sab.gif",
     "matepie": "https://media.discordapp.net/attachments/1059887015505702933/1405987014582468669/mpiethinking.gif?ex=68a2cd32&is=68a17bb2&hm=23dca040c3507a02001113190a27a9447a8a81469326c81d369ce1d75f4e0758&=",
     "kuss" : "https://media.giphy.com/media/8HvWy0vV3xb6l4FBaR/giphy.gif",
-    "niba" : "https://tenor.com/view/letter-n-gif-9063758, https://tenor.com/view/letter-i-gif-9063753, https://tenor.com/view/double-g-letter-g-g-is-here-g-police-letter-g-dancing-gif-27064909,https://tenor.com/view/letter-e-gif-9063749,https://tenor.com/view/letter-r-dancing-dance-moves-letter-gif-17607007 "
+    "niba" : "https://tenor.com/view/letter-n-gif-9063758, https://tenor.com/view/letter-i-gif-9063753, https://tenor.com/view/double-g-letter-g-g-is-here-g-police-letter-g-dancing-gif-27064909, https://tenor.com/view/letter-e-gif-9063749, https://tenor.com/view/letter-r-dancing-dance-moves-letter-gif-17607007 "
 
 
 
@@ -84,3 +84,4 @@ async def on_message(message):
 
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
+
