@@ -1,10 +1,8 @@
 import os
 import discord
 from discord.ext import commands, tasks
-import re
-import aiohttp
+from TikTokApi import TikTokApi
 import asyncio
-import json
 
 last_video_id = None
 was_live = False
@@ -53,30 +51,17 @@ async def on_message(message):
 
     if "video" in szoveg:
         username = "egoversal"
-        url = f"https://www.tiktok.com/@{username}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
-                html = await resp.text()
-
-
-                data_match = re.search(r'<script id="SIGI_STATE".*?>(.*?)</script>', html, re.S)
-                if not data_match:
-                    await message.channel.send("Nem találtam videó adatokat 😢")
-                else:
-                    try:
-                        data = json.loads(data_match.group(1))
-                        videos = data.get("ItemModule", {})
-                        if videos:
-                            latest_id = list(videos.keys())[0]
-                            await message.channel.send(
-                                f"Legújabb TikTok videó apucitol 🎥\nhttps://www.tiktok.com/@{username}/video/{latest_id}"
-                            )
-                        else:
-                            await message.channel.send("Matepie egy cigany")
-                    except Exception as e:
-                        await message.channel.send(f"Matepie egy cigany\n{e}")
-
+        try:
+            with TikTokApi() as api:
+                user = api.user(username=username)
+                videos = user.videos(count=1)
+                latest_video = next(videos)
+                video_id = latest_video.id
+                await message.channel.send(
+                    f"Legújabb TikTok videó apucitol \nhttps://www.tiktok.com/@{username}/video/{video_id}"
+                )
+        except Exception as e:
+            await message.channel.send(f"Matepie egy cigany")
 
     await bot.process_commands(message)
 
@@ -85,56 +70,47 @@ async def on_message(message):
 async def check_tiktok_live():
     global was_live
     username = "egoversal"
+
     url = f"https://www.tiktok.com/@{username}"
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
-            html = await resp.text()
-
-            is_live = '"liveRoomId"' in html or '"live_room_id"' in html
+    try:
+        with TikTokApi() as api:
+            user = api.user(username=username)
+            is_live = user.is_live
+            channel = bot.get_channel(1256302102058107010)
 
             if is_live and not was_live:
                 was_live = True
-                channel = bot.get_channel(1256302102058107010)
                 await channel.send(f"@tesztastream Apuci éppen élőben van TikTokon! \n{url}")
 
             elif not is_live and was_live:
                 was_live = False
+    except:
+        pass
 
 
 @tasks.loop(minutes=5)
 async def check_tiktok_new_video():
     global last_video_id
     username = "egoversal"
-    url = f"https://www.tiktok.com/@{username}"
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
-            html = await resp.text()
+    try:
+        with TikTokApi() as api:
+            user = api.user(username=username)
+            videos = user.videos(count=1)
+            latest_video = next(videos)
+            latest_id = latest_video.id
 
-
-            data_match = re.search(r'<script id="SIGI_STATE".*?>(.*?)</script>', html, re.S)
-            if not data_match:
-                return
-
-            try:
-                data = json.loads(data_match.group(1))
-                videos = data.get("ItemModule", {})
-                if not videos:
-                    return
-
-                latest_id = list(videos.keys())[0]
-
-                if last_video_id is None:
-                    last_video_id = latest_id
-                elif latest_id != last_video_id:
-                    last_video_id = latest_id
-                    channel = bot.get_channel(1256302102058107010)
-                    await channel.send(
-                        f"Apuci uj videot tett fel \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
-                    )
-            except:
-                return
+            if last_video_id is None:
+                last_video_id = latest_id
+            elif latest_id != last_video_id:
+                last_video_id = latest_id
+                channel = bot.get_channel(1256302102058107010)
+                await channel.send(
+                    f"Új TikTok videó @{username}-tól! \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
+                )
+    except:
+        pass
 
 
 token = os.getenv("DISCORD_TOKEN")
