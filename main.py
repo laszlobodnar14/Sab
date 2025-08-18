@@ -1,4 +1,6 @@
 import os
+
+import aiohttp
 import discord
 from discord.ext import commands, tasks
 from TikTokApi import TikTokApi
@@ -74,20 +76,17 @@ async def check_tiktok_live():
     username = "egoversal"
     url = f"https://www.tiktok.com/@{username}"
 
-    try:
-        async with TikTokApi() as api:
-            user = await api.user(username=username)
-            is_live = await user.is_live()
-            channel = bot.get_channel(1256302102058107010)
+    async  with aiohttp.ClientSession() as session:
+        async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
+            html = await resp.text()
+            is_live = '"liveRoomId"' in html or '"live_room_id"' in html
 
             if is_live and not was_live:
                 was_live = True
-                await channel.send(f"@tesztastream Apuci éppen élőben van TikTokon! \n{url}")
-
+                channel = bot.get_channel(1256302102058107010)
+                await channel.send(f"Apuci eppen eloben kozvetit \n{url}/live")
             elif not is_live and was_live:
                 was_live = False
-    except Exception as e:
-        print(f"Matepie egy cigany")
 
 
 
