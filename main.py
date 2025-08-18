@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 import re
 import aiohttp
 import asyncio
+import json
 
 last_video_id = None
 was_live = False
@@ -39,17 +40,17 @@ async def on_message(message):
 
     szoveg = message.content.lower()
 
-    # GIF-ek
+
     for kulcsszo, gif in gifs.items():
         if kulcsszo in szoveg:
             await message.channel.send(gif)
 
-    # Linkek
+
     for kulcsszo, link in links.items():
         if kulcsszo in szoveg:
             await message.channel.send(link)
 
-    # TikTok legújabb videó kulcsszó
+
     if "video" in szoveg:
         username = "egoversal"
         url = f"https://www.tiktok.com/@{username}"
@@ -58,14 +59,25 @@ async def on_message(message):
             async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
                 html = await resp.text()
 
-                video_ids = re.findall(r'video/(\d+)', html)
-                if video_ids:
-                    latest_id = video_ids[0]
-                    await message.channel.send(
-                        f"Legújabb TikTok videó apucitol 🎥 \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
-                    )
 
-    # parancsok feldolgozása (mindig a végén)
+                data_match = re.search(r'<script id="SIGI_STATE".*?>(.*?)</script>', html, re.S)
+                if not data_match:
+                    await message.channel.send("Nem találtam videó adatokat 😢")
+                else:
+                    try:
+                        data = json.loads(data_match.group(1))
+                        videos = data.get("ItemModule", {})
+                        if videos:
+                            latest_id = list(videos.keys())[0]
+                            await message.channel.send(
+                                f"Legújabb TikTok videó apucitol 🎥\nhttps://www.tiktok.com/@{username}/video/{latest_id}"
+                            )
+                        else:
+                            await message.channel.send("Matepie egy cigany")
+                    except Exception as e:
+                        await message.channel.send(f"Matepie egy cigany\n{e}")
+
+
     await bot.process_commands(message)
 
 
@@ -100,20 +112,29 @@ async def check_tiktok_new_video():
         async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
             html = await resp.text()
 
-            video_ids = re.findall(r'video/(\d+)', html)
-            if not video_ids:
+
+            data_match = re.search(r'<script id="SIGI_STATE".*?>(.*?)</script>', html, re.S)
+            if not data_match:
                 return
 
-            latest_id = video_ids[0]
+            try:
+                data = json.loads(data_match.group(1))
+                videos = data.get("ItemModule", {})
+                if not videos:
+                    return
 
-            if last_video_id is None:
-                last_video_id = latest_id
-            elif latest_id != last_video_id:
-                last_video_id = latest_id
-                channel = bot.get_channel(1256302102058107010)
-                await channel.send(
-                    f"Új TikTok videó @{username}-tól! \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
-                )
+                latest_id = list(videos.keys())[0]
+
+                if last_video_id is None:
+                    last_video_id = latest_id
+                elif latest_id != last_video_id:
+                    last_video_id = latest_id
+                    channel = bot.get_channel(1256302102058107010)
+                    await channel.send(
+                        f"Apuci uj videot tett fel \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
+                    )
+            except:
+                return
 
 
 token = os.getenv("DISCORD_TOKEN")
