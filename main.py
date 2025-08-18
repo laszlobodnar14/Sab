@@ -48,18 +48,20 @@ async def on_message(message):
         if kulcsszo in szoveg:
             await message.channel.send(link)
 
-
     if "video" in szoveg:
         username = "egoversal"
         try:
-            with TikTokApi() as api:
-                user = api.user(username=username)
-                videos = user.videos(count=1)
-                latest_video = next(videos)
-                video_id = latest_video.id
-                await message.channel.send(
-                    f"Legújabb TikTok videó apucitol \nhttps://www.tiktok.com/@{username}/video/{video_id}"
-                )
+            async with TikTokApi() as api:
+                user = await api.user(username=username)
+                videos = await user.videos(count=1)
+                if videos:
+                    latest_video = videos[0]
+                    video_id = latest_video.id
+                    await message.channel.send(
+                        f"Legújabb TikTok videó apucitol \nhttps://www.tiktok.com/@{username}/video/{video_id}"
+                    )
+                else:
+                    await message.channel.send("Matepie egy cigany")
         except Exception as e:
             await message.channel.send(f"Matepie egy cigany")
 
@@ -70,13 +72,12 @@ async def on_message(message):
 async def check_tiktok_live():
     global was_live
     username = "egoversal"
-
     url = f"https://www.tiktok.com/@{username}"
 
     try:
-        with TikTokApi() as api:
-            user = api.user(username=username)
-            is_live = user.is_live
+        async with TikTokApi() as api:
+            user = await api.user(username=username)
+            is_live = await user.is_live()
             channel = bot.get_channel(1256302102058107010)
 
             if is_live and not was_live:
@@ -85,8 +86,9 @@ async def check_tiktok_live():
 
             elif not is_live and was_live:
                 was_live = False
-    except:
-        pass
+    except Exception as e:
+        print(f"Matepie egy cigany")
+
 
 
 @tasks.loop(minutes=5)
@@ -95,22 +97,24 @@ async def check_tiktok_new_video():
     username = "egoversal"
 
     try:
-        with TikTokApi() as api:
-            user = api.user(username=username)
-            videos = user.videos(count=1)
-            latest_video = next(videos)
-            latest_id = latest_video.id
+        async with TikTokApi() as api:
+            user = await api.user(username=username)
+            videos = await user.videos(count=1)
+            if videos:
+                latest_video = videos[0]
+                latest_id = latest_video.id
 
-            if last_video_id is None:
-                last_video_id = latest_id
-            elif latest_id != last_video_id:
-                last_video_id = latest_id
-                channel = bot.get_channel(1256302102058107010)
-                await channel.send(
-                    f"Új TikTok videó @{username}-tól! \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
-                )
-    except:
-        pass
+                if last_video_id is None:
+                    last_video_id = latest_id
+                elif latest_id != last_video_id:
+                    last_video_id = latest_id
+                    channel = bot.get_channel(1256302102058107010)
+                    await channel.send(
+                        f"Új TikTok videó @{username}-tól! \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
+                    )
+    except Exception as e:
+        print(f"Matepie egy cigany")
+
 
 
 token = os.getenv("DISCORD_TOKEN")
