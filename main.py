@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 
 last_video_id = None
+was_live = False
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -48,8 +49,7 @@ async def on_message(message):
         if kulcsszo in szoveg:
             await message.channel.send(link)
 
-    await bot.process_commands(message)
-
+    # TikTok legújabb videó kulcsszó
     if "video" in szoveg:
         username = "egoversal"
         url = f"https://www.tiktok.com/@{username}"
@@ -62,25 +62,32 @@ async def on_message(message):
                 if video_ids:
                     latest_id = video_ids[0]
                     await message.channel.send(
-                        f"Legújabb TikTok videó apucitol  \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
+                        f"Legújabb TikTok videó apucitol 🎥 \nhttps://www.tiktok.com/@{username}/video/{latest_id}"
                     )
 
+    # parancsok feldolgozása (mindig a végén)
     await bot.process_commands(message)
 
 
 @tasks.loop(minutes=5)
 async def check_tiktok_live():
+    global was_live
     username = "egoversal"
     url = f"https://www.tiktok.com/@{username}"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
             html = await resp.text()
-            if "LIVE" in html:
+
+            is_live = '"liveRoomId"' in html or '"live_room_id"' in html
+
+            if is_live and not was_live:
+                was_live = True
                 channel = bot.get_channel(1256302102058107010)
-                await channel.send(
-                    f"@everyone {username} éppen élőben van TikTokon! 🔴\n{url}"
-                )
+                await channel.send(f"@tesztastream Apuci éppen élőben van TikTokon! \n{url}")
+
+            elif not is_live and was_live:
+                was_live = False
 
 
 @tasks.loop(minutes=5)
