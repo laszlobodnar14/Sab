@@ -17,7 +17,8 @@ gifs = {
     "bak": "https://cdn.discordapp.com/attachments/1059887015505702933/1406314003600248903/sab_bak.gif",
     "sab": "https://media.discordapp.net/attachments/1059887015505702933/1405592851102044220/Sab.gif",
     "matepie": "https://media.discordapp.net/attachments/1059887015505702933/1405987014582468669/mpiethinking.gif",
-    "kuss": "https://media.giphy.com/media/8HvWy0vV3xb6l4FBaR/giphy.gif"
+    "kuss": "https://media.giphy.com/media/8HvWy0vV3xb6l4FBaR/giphy.gif",
+    "fika": "https://media.discordapp.net/attachments/1059887015505702933/1409267765000536226/sabfika.gif?ex=68acc262&is=68ab70e2&hm=4572d010c785f17415940e81e5108b09e9eb7c83d4b4283fefd0f8a705fbe8f0&=&width=541&height=960"
 }
 
 links = {
@@ -118,3 +119,4 @@ async def check_tiktok_new_video():
 
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
+
